@@ -15,3 +15,7 @@ Install the packages ` postgresql` and `rabbitmq`
 In postgresql create databases: *account, albums, artists, tracks*
 
 Run */db.py scripts
+
+## Deploy
+
+Run `run.sh` script

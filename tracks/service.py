@@ -40,7 +40,7 @@ async def likes_user(request: Request, response: Response):
         likes = []
 
         for like in likes_q:
-            r = await client.get('http://localhost:8002/tracks/' + str(like.trackid), headers={'OAuth': oauth})
+            r = await client.get(TRACK_URL + str(like.trackid), headers={'OAuth': oauth})
             r = json.loads(r.content)['result']
             
             track = TrackGet(

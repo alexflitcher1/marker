@@ -40,7 +40,7 @@ async def album_likes(request: Request, response: Response):
         likes = []
 
         for like in likes_q:
-            r = await client.get('http://localhost:8001/albums/' + str(like.albumid), headers={'OAuth': oauth})
+            r = await client.get(ALBUM_URL + str(like.albumid), headers={'OAuth': oauth})
             r = json.loads(r.content)['result']
             
             album = AlbumGet(

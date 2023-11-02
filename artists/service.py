@@ -41,7 +41,7 @@ async def artist_likes(request: Request, response: Response):
         likes = []
 
         for like in likes_q:
-            r = await client.get('http://localhost:8003/artists/' + str(like.artistid), headers={'OAuth': oauth})
+            r = await client.get(ARTISTS_URL + str(like.artistid), headers={'OAuth': oauth})
             r = json.loads(r.content)['result']
             
             artist = ArtistGet(
