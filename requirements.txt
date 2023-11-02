@@ -1,0 +1,6 @@
+fastapi[all]
+sqlalchemy
+uvicorn
+psycopg2
+httpx
+pika
