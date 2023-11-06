@@ -106,8 +106,11 @@ class DBManagerMails:
             .filter(Mails.email == email) \
             .first()
         
+        return to_ret
+        
+    def delete_code(self, email: str):
         try:
-            code = to_ret.code
+            code = self.fetch_code(email).code
         
             self.db.query(Mails) \
                 .filter(Mails.email == email) \

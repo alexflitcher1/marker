@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi import Request, Body
 from fastapi import Response
+from fastapi.middleware.cors import CORSMiddleware
 
 import httpx
 from httpx import AsyncClient
@@ -23,6 +24,16 @@ likes_manager = DBManagerLikes()
 app = FastAPI(
     title='Marker APIs',
     openapi_tags=tags_metadata
+)
+
+origins = ["*"]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 client = AsyncClient()
@@ -82,22 +93,13 @@ async def like_artist(request: Request, response: Response, data: LikeArtist):
 @app.get('/artists/{id}', tags=['Artists'])
 async def artist_by_id(request: Request, response: Response, id: int):
 
-    oauth = request.headers.get('OAuth')
-    
-    r = await client.get(AUTH_URL, headers={'OAuth': oauth})
-    r = json.loads(r.content)
+    artist = artists_manager.fetch_id(id)
+    to_ret = ArtistGet(
+        id=artist.id,
+        name=artist.name,
+        description=artist.discription,
+        avatar=artist.avatar,
+        background=artist.background
+    )
 
-    if r['auth']:
-        artist = artists_manager.fetch_id(id)
-        to_ret = ArtistGet(
-            id=artist.id,
-            name=artist.name,
-            description=artist.discription,
-            avatar=artist.avatar,
-            background=artist.background
-        )
-
-        return {'result': to_ret}
-
-    response.status_code = 401
-    return {'error': 'Unauthorized'}
+    return {'result': to_ret}

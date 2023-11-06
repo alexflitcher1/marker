@@ -18,6 +18,7 @@ class Tracks(Base):
     albumid = Column(String(128))
     avatar = Column(String(128))
     path = Column(String(128))
+    genre = Column(String(32))
 
 class Likes(Base):
     __tablename__ = "likes"

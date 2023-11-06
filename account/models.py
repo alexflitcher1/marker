@@ -21,6 +21,11 @@ class AccountCreate(BaseModel):
     email: str
     password: str
 
+class AccountToken(BaseModel):
+
+    login: str
+    password: str
+
 class SettingsGet(BaseModel):
 
     id: int

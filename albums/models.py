@@ -8,6 +8,7 @@ class AlbumGet(BaseModel):
     title: str
     description: str
     avatar: str
+    genre: str
 
 class LikeGet(BaseModel):
 

@@ -17,6 +17,7 @@ class Album(Base):
     title = Column(String(255))
     discription = Column(String(512))
     avatar = Column(String(128))
+    genre = Column(String(32))
 
 class Likes(Base):
     __tablename__ = "likes"

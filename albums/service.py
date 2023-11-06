@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi import Request, Body
 from fastapi import Response
+from fastapi.middleware.cors import CORSMiddleware
 
 import httpx
 from httpx import AsyncClient
@@ -25,9 +26,19 @@ app = FastAPI(
     openapi_tags=tags_metadata
 )
 
+origins = ["*"]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 client = AsyncClient()
 
-@app.get('/albums/likes')
+@app.get('/albums/likes', tags=['Albums'])
 async def album_likes(request: Request, response: Response):
     
     oauth = request.headers.get('OAuth')
@@ -48,7 +59,8 @@ async def album_likes(request: Request, response: Response):
                 artistid=r['artistid'],
                 title=r['title'],
                 description=r['description'],
-                avatar=r['avatar']
+                avatar=r['avatar'],
+                genre=r['genre']
             )
 
             likes.append(
@@ -81,35 +93,36 @@ async def like_album(request: Request, response: Response, data: LikeAlbum):
 
 @app.get('/albums/{id}', tags=['Albums'])
 async def album_by_id(request: Request, response: Response, id: int):
+        
+    album = album_manager.fetch_id(id)
+    to_ret = AlbumGet(
+        id=album.id,
+        artistid=album.artistid,
+        title=album.title,
+        description=album.discription,
+        avatar=album.avatar,
+        genre=album.genre
+    )
 
-    oauth = request.headers.get('OAuth')
-    
-    r = await client.get(AUTH_URL, headers={'OAuth': oauth})
-    r = json.loads(r.content)
-
-    if r['auth']:
-        album = album_manager.fetch_id(id)
-        to_ret = AlbumGet(
-            id=album.id,
-            artistid=album.artistid,
-            title=album.title,
-            description=album.discription,
-            avatar=album.avatar
-        )
-
-        return {'result': to_ret}
-
-    response.status_code = 401
-    return {'error': 'Unauthorized'}
+    return {'result': to_ret}
 
 
-@app.get('/albums/{id}/tracks', tags=['Albums'])
+@app.get('/albums/artist/{id}', tags=['Albums'])
 async def album_tracks(request: Request, response: Response, id: int):
 
-    oauth = request.headers.get('OAuth')
+    albums_q = album_manager.fetch_artist_id(id)
+    albums = []
     
-    r = await client.get(AUTH_URL, headers={'OAuth': oauth})
-    r = json.loads(r.content)
+    for album in albums_q:
+        albums.append(
+            AlbumGet(
+                id=album.id,
+                artistid=album.artistid,
+                title=album.title,
+                description=album.discription,
+                avatar=album.avatar,
+                genre=album.genre
+            )
+        )
 
-    if r['auth']:
-        return {'result': 'waiting'}
+    return {'result': albums}

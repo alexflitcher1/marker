@@ -16,6 +16,7 @@ class TrackGet(BaseModel):
     albumid: int
     avatar: str
     path: str
+    genre: str
 
 class LikeGet(BaseModel):
 

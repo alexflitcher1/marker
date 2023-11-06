@@ -1,10 +1,13 @@
 from fastapi import FastAPI
 from fastapi import Request, Body
 from fastapi import Response
+from fastapi.middleware.cors import CORSMiddleware
 
 import httpx
 from httpx import AsyncClient
 import json
+
+import bcrypt
 
 import pika
 
@@ -26,6 +29,16 @@ email_manager = DBManagerMails()
 app = FastAPI(
     title='Marker APIs',
     openapi_tags=tags_metadata
+)
+
+origins = ["*"]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 client = AsyncClient()
@@ -137,20 +150,34 @@ async def mail(request: Request, response: Response, data: AccountCreate):
 
     return {'result': bool(code)}
 
+
 @app.post('/account/create', tags=['Account'])
 async def create(request: Request, response: Response, user: AccountCreate, mail: MailModel):
     
-    code = email_manager.fetch_code(email=mail.email)
+    code = email_manager.fetch_code(email=mail.email).code
 
     if mail.email == user.email and code == mail.code:
+       password = bcrypt.hashpw(user.password.encode(), bcrypt.gensalt()).decode()
        account_manager.create(
             login=user.login,
             email=user.email,
-            password=user.password,
+            password=password,
             firstName=user.firstName,
             lastName=user.lastName
        )
-       return {'result': user}
+       email_manager.delete_code(email=mail.email)
+       return {'result': password}
 
     return {'error': 'Mail code is not valid'}
 
+
+@app.post('/account/token', tags=['Account'])
+async def token(request: Request, response: Response, user: AccountToken):
+    
+    login = account_manager.fetch_login(user.login)
+    password = login.password
+
+    if bcrypt.hashpw(user.password.encode(), password.encode()).decode() == password:
+        return {'result': password }
+    
+    return {'result': False}

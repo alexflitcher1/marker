@@ -13,13 +13,14 @@ class DBManagerTracks:
         self.db = SessionLocal()
     
     def create(self, artist_id: int, title: str,
-    avatar: str, path: str, album_id: int):
+    avatar: str, path: str, album_id: int, genre: str):
         track = Tracks(
             title=title,
             artistid=artist_id,
             albumid=album_id,
             avatar=avatar,
-            path=path
+            path=path,
+            genre=genre
         )
         
         try:

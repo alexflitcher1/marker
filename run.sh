@@ -20,7 +20,7 @@ python -m uvicorn service:app --port 8001 --reload > albums.log.txt &
 
 
 cd ..
-python rabbitmq.sh > rabbitmq.log.txt &
+python rabbitmq.py > rabbitmq.log.txt &
 
 
 echo "Starting..."

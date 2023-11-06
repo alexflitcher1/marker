@@ -11,12 +11,13 @@ class DBManagerAlbum:
         self.db = SessionLocal()
     
     def create(self, artist_id: int, title: str,
-    discription: str, avatar: str):
+    description: str, avatar: str, genre: str):
         album = Album(
             artistid=artist_id,
             title=title,
-            discription=discription,
-            avatar=avatar
+            discription=description,
+            avatar=avatar,
+            genre=genre
         )
         
         try:

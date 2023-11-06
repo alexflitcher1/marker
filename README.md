@@ -12,9 +12,10 @@ Install the packages ` postgresql` and `rabbitmq`
 
 `sudo pacman -S postgresql rabbitmq`
 
-In postgresql create databases: *account, albums, artists, tracks*
+In postgresql create databases: *accounts, albums, artists, tracks*
 
-Run */db.py scripts
+Update connection string in */db.py scripts and 
+run */db.py scripts
 
 ## Deploy
 
