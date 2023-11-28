@@ -1,35 +1,25 @@
-from fastapi import FastAPI
-from fastapi import Request, Body
-from fastapi import Response
-from fastapi.middleware.cors import CORSMiddleware
-
-import httpx
-from httpx import AsyncClient
 import json
-
-import bcrypt
-
 import pika
 
-from models import *
-from db_manager import *
-from config import *
+from fastapi import FastAPI, Depends, Request
+from fastapi_jwt_auth import AuthJWT
+from fastapi_jwt_auth.exceptions import AuthJWTException
+from fastapi.middleware.cors import CORSMiddleware
 
+from models import AccountGet, AccountCreate, AccountToken, SettingsGet
+from models import SettingsUpdate, MailModel, TokenModel, ServiceSettings
+from db_manager import DBManagerAccount, DBManagerSettings, DBManagerMails
 
-tags_metadata = [
-    {
-        'name': 'Account',
-    }
-]
+import utils.auth as uauth
+import utils.exception_generators as ugens
+import utils.validation as uvalid
+
 
 account_manager = DBManagerAccount()
 settings_manager = DBManagerSettings()
 email_manager = DBManagerMails()
 
-app = FastAPI(
-    title='Marker APIs',
-    openapi_tags=tags_metadata
-)
+app = FastAPI(title='Marker Account APIs')
 
 origins = ["*"]
 
@@ -41,143 +31,136 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-client = AsyncClient()
+@AuthJWT.load_config
+def get_config():
+    return ServiceSettings()
+
+@app.get('/account/auth', tags=['Account'], response_model=AccountGet)
+async def auth(user: AccountToken = Depends(uauth.is_auth)):
+    user = account_manager.fetch_email(user['sub'])
+    return AccountGet(**user.serialize)
 
 
-@app.get('/account/auth', tags=['Account'])
-async def auth(request: Request, response: Response):
+@app.get('/account/status', tags=['Account'], response_model=AccountGet)
+async def status(request: Request):
 
-    oauth = request.headers.get('OAuth')
-    account = account_manager.fetch_password(oauth)
+    user, code, token = await uauth.is_auth_query(request)
 
-    if account:
-        return {'auth': account.id}
-    
-    response.status_code = 401
-    return {'auth': False}
+    if code != 200:
+        ugens.generate_401()
 
-
-@app.get('/account/status', tags=['Account'])
-async def status(request: Request, response: Response):
-
-    oauth = request.headers.get('OAuth')
-
-    r = await client.get(AUTH_URL, headers={'OAuth': oauth})
-    r = json.loads(r.content)
-
-    if r['auth']:
-        account = account_manager.fetch_password(oauth)
-        to_ret = AccountGet(
-            id=account.id,
-            now=account.now,
-            login=account.login,
-            firstName=account.firstName,
-            lastName=account.lastName,
-            phones=account.phones,
-            email=account.email,
-            region=account.region,
-            password=account.password,
-            role=account.role
-        )
-        return {'result': to_ret}
-
-    response.status_code = 401
-    return {'error': 'Unauthorized'}
+    return AccountGet(**user)
 
 
 @app.get('/account/settings', tags=['Account'])
-async def settings(request: Request, response: Response):
-    
-    oauth = request.headers.get('OAuth')
-    
-    r = await client.get(AUTH_URL, headers={'OAuth': oauth})
-    r = json.loads(r.content)
-    
-    if r['auth']:
-        account = account_manager.fetch_password(oauth)
-        settings = settings_manager.fetch_uid(account.id)
-        to_ret = SettingsGet(
-            id=settings.id,
-            uid=settings.uid,
-            theme=settings.theme
-        )
-        return {'result': to_ret}
+async def settings_get(request: Request):
 
-    response.status_code = 401
-    return {'error': 'Unauthorized'}
+    user, code, token = await uauth.is_auth_query(request)
+
+    if code != 200:
+        ugens.generate_401()
+
+    settings = settings_manager.fetch_uid(user['id'])
+    return SettingsGet(**settings.serialize)
 
 
-@app.post('/account/settings', tags=['Account'])
-async def settings(request: Request, response: Response, data: SettingsUpdate):
+@app.post('/account/settings', tags=['Account'], response_model=SettingsGet)
+async def settings_change(request: Request, data: SettingsUpdate):
 
-    oauth = request.headers.get('OAuth')
-    
-    r = await client.get(AUTH_URL, headers={'OAuth': oauth})
-    r = json.loads(r.content)
+    user, code, token = await uauth.is_auth_query(request)
 
-    if r['auth']:
-        account = account_manager.fetch_password(oauth)
-        to_ret = settings_manager.update_theme(
-            uid=account.id,
-            theme=data.theme
-        )
-        response.status_code = 201
-        return to_ret
+    if code != 200:
+        ugens.generate_401()
 
-    response.status_code = 401
-    return {'error': 'Unauthorized'}
+    args = {
+        'uid': user['id'],
+        'theme': data.theme,
+        'lang': data.lang
+    }
+    settings = settings_manager.update_theme(**args)
+    return SettingsGet(**settings.serialize)
 
 
 @app.post('/account/mail', tags=['Account'])
-async def mail(request: Request, response: Response, data: AccountCreate):
-    
-    connection = pika.BlockingConnection(
-        pika.ConnectionParameters(host='localhost'))
+async def mail(data: AccountCreate):
 
+    if not uvalid.validate(data):
+        ugens.generate_code_400()
+
+    # check that user data is not already used
+    account_check = (
+        account_manager.fetch_email(data.email),
+        account_manager.fetch_login(data.login)
+    )
+    if account_check[0]:
+        ugens.generate_mail_400()
+
+    if account_check[1]:
+        ugens.generate_login_400()
+
+    connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
     channel = connection.channel()
-    
     channel.exchange_declare(exchange='direct_logs', exchange_type='direct')
     severity = '/account/mail'
 
-    
-    code = email_manager.create(email=data.email)
-
+    code = email_manager.create(data.email)
     message = json.dumps({'email': data.email, 'code': code})
     channel.basic_publish(
         exchange='direct_logs', routing_key=severity, body=message)
 
     connection.close()
-
     return {'result': bool(code)}
 
 
-@app.post('/account/create', tags=['Account'])
-async def create(request: Request, response: Response, user: AccountCreate, mail: MailModel):
-    
-    code = email_manager.fetch_code(email=mail.email).code
+@app.post('/account/create', tags=['Account'], response_model=AccountCreate)
+async def create(user: AccountCreate, mail: MailModel):
 
-    if mail.email == user.email and code == mail.code:
-       password = bcrypt.hashpw(user.password.encode(), bcrypt.gensalt()).decode()
-       account_manager.create(
-            login=user.login,
-            email=user.email,
-            password=password,
-            firstName=user.firstName,
-            lastName=user.lastName
-       )
-       email_manager.delete_code(email=mail.email)
-       return {'result': password}
+    code = email_manager.fetch_code(mail.email)
 
-    return {'error': 'Mail code is not valid'}
+    try:
+        code = code.code
+        if mail.email != user.email or code != mail.code:
+            raise Exception()
+    except Exception:
+        ugens.generate_code_400()
+
+    password = uauth.get_hashed_password(user.password)
+    user.password = password
+
+    account_manager.create(**user.serialize)
+    email_manager.delete_code(email=mail.email)
+
+    return AccountCreate(**user.serialize)
 
 
-@app.post('/account/token', tags=['Account'])
-async def token(request: Request, response: Response, user: AccountToken):
-    
-    login = account_manager.fetch_login(user.login)
-    password = login.password
+@app.post('/account/token', tags=['Account'], response_model=TokenModel)
+async def token(user: AccountToken, Authorize: AuthJWT = Depends()):
 
-    if bcrypt.hashpw(user.password.encode(), password.encode()).decode() == password:
-        return {'result': password }
-    
-    return {'result': False}
+    account = account_manager.fetch_login(user.login)
+    if not user or not account:
+        ugens.generate_token_400()
+
+    password_hash = account.password
+
+    if not uauth.verify_password(user.password, password_hash):
+        ugens.generate_token_400()
+
+
+    tokens = TokenModel(
+        access_token = Authorize.create_access_token(subject=account.email),
+        refresh_token = Authorize.create_refresh_token(subject=account.email)
+    )
+
+    return tokens
+
+
+@app.post('/account/refresh')
+def refresh(Authorize: AuthJWT = Depends()):
+
+    try:
+        Authorize.jwt_refresh_token_required()
+        current_user = Authorize.get_jwt_subject()
+        new_access_token = Authorize.create_access_token(subject=current_user)
+        return {"access_token": new_access_token}
+    except AuthJWTException:
+        ugens.generate_401()

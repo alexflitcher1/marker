@@ -1,7 +1,14 @@
 from pydantic import BaseModel
 
-class AccountGet(BaseModel):
-   
+from utils.serializers import ModelSerializer
+
+
+class SerializedModel(BaseModel, ModelSerializer):
+    pass
+
+
+class AccountGet(SerializedModel):
+
     id: int
     now: int | None
     login: str
@@ -13,30 +20,56 @@ class AccountGet(BaseModel):
     password: str
     role: str
 
-class AccountCreate(BaseModel):
-    
+
+class AccountCreate(SerializedModel):
+
     login: str
     firstName: str | None
     lastName: str | None
     email: str
     password: str
 
-class AccountToken(BaseModel):
+
+class AccountToken(SerializedModel):
 
     login: str
     password: str
 
-class SettingsGet(BaseModel):
+
+class SettingsGet(SerializedModel):
 
     id: int
     uid: int
     theme: str
+    lang: str
+    avatar: str
+    background: str
 
-class SettingsUpdate(BaseModel):
-    
+
+class SettingsUpdate(SerializedModel):
+
     theme: str | None
+    lang: str | None
 
-class MailModel(BaseModel):
+
+class MailModel(SerializedModel):
 
     email: str
     code: str
+
+
+class TokenModel(SerializedModel):
+
+    access_token: str
+    refresh_token: str
+
+
+class TokenPayload(SerializedModel):
+
+    exp: int
+    sup: str
+
+
+class ServiceSettings(SerializedModel):
+
+    authjwt_secret_key: str = "secret"

@@ -1,8 +1,8 @@
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy import exc
+
 from db import engine, Album, Likes
 
-SessionLocal = sessionmaker(autoflush=False, bind=engine)
-db = SessionLocal()
 
 class DBManagerAlbum:
 
@@ -15,7 +15,7 @@ class DBManagerAlbum:
         album = Album(
             artistid=artist_id,
             title=title,
-            discription=description,
+            description=description,
             avatar=avatar,
             genre=genre
         )
@@ -23,10 +23,10 @@ class DBManagerAlbum:
         try:
             self.db.add(album)
             self.db.commit()
-
-            return album.id
-        except:
+        except exc.SQLAlchemyError:
             return False
+
+        return album.id
 
     def fetch_artist_id(self, artist_id: int):
         return self.db.query(Album)\
@@ -39,7 +39,6 @@ class DBManagerAlbum:
     def fetch_title(self, title: str):
         return self.db.query(Album) \
         .filter(Album.title == title)
-
 
 
 class DBManagerLikes:
@@ -57,13 +56,29 @@ class DBManagerLikes:
         try:
             self.db.add(like)
             self.db.commit()
-
-            return like.id
-        except:
+        except exc.SQLAlchemyError:
             return False
+
+        return like.id
 
     def fetch_likes(self, uid: int):
         return self.db.query(Likes) \
             .filter(Likes.uid == uid) \
             .all()
 
+    def fetch_like(self, uid: int, album_id: int):
+        return self.db.query(Likes) \
+            .filter(Likes.uid == uid, Likes.albumid == album_id) \
+            .first()
+
+    def delete(self, uid: int, album_id: int):
+        try:
+            self.db.query(Likes) \
+                .filter(Likes.uid == uid, Likes.albumid == album_id) \
+                .delete()
+
+            self.db.commit()
+        except exc.SQLAlchemyError:
+            return False
+
+        return True

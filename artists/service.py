@@ -10,21 +10,15 @@ import json
 from models import *
 from db_manager import *
 from config import *
+import utils.auth as uauth
+import utils.exception_generators as ugens
+from utils.auth import client
 
-
-tags_metadata = [
-    {
-        'name': 'Artists',
-    }
-]
 
 artists_manager = DBManagerArtist()
 likes_manager = DBManagerLikes()
 
-app = FastAPI(
-    title='Marker APIs',
-    openapi_tags=tags_metadata
-)
+app = FastAPI(title='Marker Artists APIs')
 
 origins = ["*"]
 
@@ -36,70 +30,82 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-client = AsyncClient()
-
 
 @app.get('/artists/likes', tags=['Artists'])
-async def artist_likes(request: Request, response: Response):
+async def artist_likes(request: Request):
 
-    oauth = request.headers.get('OAuth')
+    user, code, token = await uauth.is_auth_query(request)
     
-    r = await client.get(AUTH_URL, headers={'OAuth': oauth})
-    r = json.loads(r.content)
+    if code != 200:
+        ugens.generate_401()
+    
+    likes_q = likes_manager.fetch_likes(user['id'])
+    likes = []
 
-    if r['auth']:
-        likes_q = likes_manager.fetch_likes(r['auth'])
-        likes = []
-
-        for like in likes_q:
-            r = await client.get(ARTISTS_URL + str(like.artistid), headers={'OAuth': oauth})
-            r = json.loads(r.content)['result']
+    for like in likes_q:
+        artist = artists_manager.fetch_id(like.artistid)
+        if not artist:
+            continue 
             
-            artist = ArtistGet(
-                id=r['id'],
-                name=r['name'],
-                description=r['description'],
-                avatar=r['avatar'],
-                background=r['background']
+        artist = ArtistGet(**artist.serialize)
+        likes.append(
+            LikeGet(
+                id=like.id,
+                uid=like.uid,
+                artist=artist
             )
-            
-            likes.append(
-                LikeGet(
-                    id=like.id,
-                    uid=like.uid,
-                    artist=artist
-                )
-            )
+        )
 
-        return {'result': likes}
+    return likes
+    
 
 @app.post('/artists/likes', tags=['Artists'])
-async def like_artist(request: Request, response: Response, data: LikeArtist):
+async def like_artist(request: Request, data: LikeArtist):
 
-    oauth = request.headers.get('OAuth')
+    user, code, token = await uauth.is_auth_query(request)
     
-    r = await client.get(AUTH_URL, headers={'OAuth': oauth})
-    r = json.loads(r.content)
+    if code != 200:
+        ugens.generate_401()
 
-    if r['auth']:
-        query = likes_manager.create(uid=r['auth'], artist_id=data.artist_id)
+    artist = artists_manager.fetch_id(data.artist_id)
 
+    if not artist:
+        ugens.generate_artist_404()
+
+    if not likes_manager.fetch_like(uid=user['id'], artist_id=data.artist_id):
+        query = likes_manager.create(uid=user['id'], artist_id=data.artist_id)
         return {'result': query}
 
-    response.status_code = 401
-    return {'error': 'Unauthorized'}
+    query = likes_manager.delete(uid=user['id'], artist_id=data.artist_id)
+
+    return {'result': query}
 
 
-@app.get('/artists/{id}', tags=['Artists'])
-async def artist_by_id(request: Request, response: Response, id: int):
+@app.get('/artists/likes-ids')
+async def likes_ids(request: Request):
+    user, code, token = await uauth.is_auth_query(request)
+    
+    if code != 200:
+        ugens.generate_401()
+
+    likes_q = likes_manager.fetch_likes(user['id'])
+    ids = []
+
+    for like in likes_q:
+        artist = artists_manager.fetch_id(like.artistid)
+        if not artist:
+            continue
+
+        ids.append(like.artistid)
+
+    return ids
+
+@app.get('/artists/{id}', tags=['Artists'], response_model=ArtistGet)
+async def artist_by_id(id: int):
 
     artist = artists_manager.fetch_id(id)
-    to_ret = ArtistGet(
-        id=artist.id,
-        name=artist.name,
-        description=artist.discription,
-        avatar=artist.avatar,
-        background=artist.background
-    )
 
-    return {'result': to_ret}
+    if not artist:
+        ugens.generate_artist_404()
+
+    return ArtistGet(**artist.serialize)

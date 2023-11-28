@@ -2,12 +2,16 @@ from sqlalchemy import create_engine
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import DeclarativeBase
 
+from utils.serializers import TableSerializer
+
 SQLALCHEMY_DATABASE_URL = "postgresql+psycopg2://x:1234@localhost:5432/accounts"
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 
-class Base(DeclarativeBase):
+
+class Base(DeclarativeBase, TableSerializer):
     pass
+
 
 class Account(Base):
     __tablename__ = "account"
@@ -23,12 +27,17 @@ class Account(Base):
     email = Column(String(64), primary_key=True, unique=True)
     role = Column(String(32), default="user")
 
+
 class Settings(Base):
     __tablename__ = "settings"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     uid = Column(Integer, primary_key=True, unique=True)
     theme = Column(String(16), default='white')
+    lang = Column(String(16), default='ru')
+    avatar = Column(String(16), default='default.jpeg')
+    background = Column(String(16), default='default.jpg')
+
 
 class Mails(Base):
     __tablename__ = "mails"
@@ -36,5 +45,6 @@ class Mails(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     email = Column(String, primary_key=True, unique=True)
     code = Column(String(12))
+
 
 Base.metadata.create_all(bind=engine)

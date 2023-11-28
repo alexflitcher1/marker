@@ -1,0 +1,184 @@
+body {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  width: 75%;
+  margin: auto;
+  background-color: #f6f5f3;
+  font-family: 'Manrope', sans-serif;
+}
+
+#root {
+  display: flex;
+}
+
+.content {
+  width: 70%;
+}
+
+.sidebar {
+  width: 30%;
+  margin-left: 15px;
+  padding: 15px;
+  background-color: white;
+}
+
+.leader__title {
+  font-size: 3em;
+  padding: 10px;
+  margin: 20px;
+  margin-left: 0px;
+}
+
+main, .container  {
+
+  flex-grow: 1;
+  background-color: white !important;
+}
+  
+header {
+  background-color: white;
+  flex-shrink: 0;
+}
+
+.player {
+  position: fixed;
+  z-index: 100;
+  bottom: 0;
+  left: 0;
+  width: 75%;
+  margin-left: 12.5%;
+  background-color: rgba(246, 245, 243, 0.95);
+}
+
+.player__meta {
+  display: flex;
+  padding: 10px;
+  margin-top: 10px;
+}
+
+
+
+.avatar__img_player {
+  width: 40%;
+}
+
+.artists {
+  display: flex;
+  margin-top: 10px;
+}
+
+.metadata {
+  margin-left: 6%;
+}
+
+.artist {
+  margin-right: 10px;
+  font-size: 0.9em;
+  color: darkgray;
+}
+
+.player__controls {
+  display: flex;
+  align-items: center;
+  padding: 0px;
+}
+
+#ranger {
+  margin: 0;
+  height: 25px;
+  width: 100%;
+  margin-bottom: -10px;
+}
+
+#volume {
+  margin-left: auto;
+}
+
+.button_pause {
+  background-image: url("../images/pause.png") !important;
+  background-size: 40px;
+  background-repeat: no-repeat;
+}
+
+.button_play {
+  background-image: url("../images/play-buttton.png") !important;
+  background-size: 40px;
+  background-repeat: no-repeat;
+}
+
+.prev_icon {
+  background-image: url("../images/rewind-button.png") !important;
+  background-size: 40px;
+  background-repeat: no-repeat;
+}
+
+.next_icon {
+  background-image: url("../images/forward-button.png") !important;
+  background-size: 40px;
+  background-repeat: no-repeat;
+}
+
+.button__circle {
+  flex-grow: 0;
+  margin-right: 10px;
+  border: none;
+  font-size: 1.7em;
+  width: 40px;
+  height: 40px;
+  background-color: rgba(246, 245, 243, 0.95);
+  margin-left: 10px;
+  text-align: center;
+}
+
+.button__controls {
+  display: flex;
+}
+
+.button__circle:active {
+  background-color: #9e8096;
+}
+
+input[type='range'] {
+  overflow: hidden;
+  border: 1px solid #DDDDDD;
+  -webkit-appearance: none;
+}
+
+input[type='range']::-webkit-slider-runnable-track {
+  -webkit-appearance: none;
+  color: #13bba4;
+  margin-top: -1px;
+  
+}
+
+input[type='range']::-webkit-slider-thumb {
+  visibility: hidden;
+}
+
+input[type="range"]::-moz-range-progress {
+  background: linear-gradient(to right, #A600FF, #7300FD);
+
+  height: 100px;
+}
+
+
+input[type="range"]::-ms-fill-lower {
+  background: linear-gradient(to right, #A600FF, #7300FD);
+}
+
+
+input[type=range]::-webkit-slider-thumb {
+  visibility: hidden;
+}
+
+/* All the same stuff for Firefox */
+input[type=range]::-moz-range-thumb {
+  visibility: hidden;
+}
+
+/* All the same stuff for IE */
+input[type=range]::-ms-thumb {
+  visibility: hidden;
+}

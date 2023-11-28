@@ -1,0 +1,71 @@
+.track, .album {
+    padding: 10px;
+    background: white;
+    margin-top: 10px;
+    display: flex;
+    min-height: 70px;
+}
+
+.track:hover, .album:hover {
+    padding: 8px;
+    border: 2px solid #c44ae2;
+}
+
+.artists {
+    display: flex;
+    margin-top: 10px;
+}
+
+.track-index {
+    margin-top: 10px;
+    color: darkgray;
+    margin-right: 10px;
+}
+
+.artist {
+    margin-right: 10px;
+    font-size: 0.9em;
+    color: darkgray;
+}
+
+.avatar {
+    width: 23%;
+    margin-right: -12%;
+}
+
+.avatar__img {
+    width: 50px;
+    height: 50px;
+}
+
+.play {
+    position: absolute;
+    background-color: rgba(0, 0, 0, 0.8);
+    border: 1px solid white;
+    height: 50px;
+    margin-left: 15px;
+    text-align: center;
+    color: white;
+    font-size: 1.5em;
+    width: 50px;
+    border-radius: 40px;
+
+}
+
+.like__contaiter {
+    margin-left: auto;
+    width: 40px;
+    height: 40px;
+}
+
+.liked {
+    background-image: url("../images/heart.png") !important;
+    background-size: 40px;
+    background-repeat: no-repeat;
+}
+
+.like {
+    background-image: url("../images/love.png") !important;
+    background-size: 40px;
+    background-repeat: no-repeat;
+}

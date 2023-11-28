@@ -18,6 +18,9 @@ cd ..
 cd albums
 python -m uvicorn service:app --port 8001 --reload > albums.log.txt &
 
+cd ..
+cd cdn
+python -m uvicorn service:app --port 8004 --reload > cdn.log.txt &
 
 cd ..
 python rabbitmq.py > rabbitmq.log.txt &

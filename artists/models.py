@@ -1,7 +1,13 @@
 from pydantic import BaseModel, Field
 
+from utils.serializers import ModelSerializer
 
-class ArtistGet(BaseModel):
+
+class SerializedModel(BaseModel, ModelSerializer):
+    pass
+
+
+class ArtistGet(SerializedModel):
     
     id: int
     name: str
@@ -9,12 +15,20 @@ class ArtistGet(BaseModel):
     avatar: str
     background: str
 
-class LikeGet(BaseModel):
+
+class LikeGet(SerializedModel):
 
     id: int
     uid: int
     artist: ArtistGet
 
-class LikeArtist(BaseModel):
+
+class LikeArtist(SerializedModel):
 
     artist_id: int
+
+
+class Error(SerializedModel):
+    
+    code: int
+    message: str
