@@ -1,17 +1,22 @@
 from fastapi import HTTPException, status
 
+
 def generate_401():
-    """ Generate 401 error """
-    
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Invalid token"
     )
 
-def generate_album_404():
-    """ Generate 404 error """
 
+def generate_404():
     raise HTTPException(
         status_code=status.HTTP_404_NOT_FOUND,
-        detail="Album doesn't exist"
+        detail="Playlist doesn't exist"
+    )
+
+
+def generate_500():
+    raise HTTPException(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        detail="Internal server error. Try again later"
     )

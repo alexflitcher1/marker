@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from utils.serializers import ModelSerializer
 
@@ -8,7 +8,7 @@ class SerializedModel(BaseModel, ModelSerializer):
 
 
 class ArtistGet(SerializedModel):
-    
+
     id: int
     name: str
     description: str
@@ -17,7 +17,7 @@ class ArtistGet(SerializedModel):
 
 
 class TrackGet(SerializedModel):
-    
+
     id: int
     title: str
     artists: list[ArtistGet]
@@ -40,6 +40,6 @@ class LikeTrack(SerializedModel):
 
 
 class Error(SerializedModel):
-    
+
     code: int
     message: str

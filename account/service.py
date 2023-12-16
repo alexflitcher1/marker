@@ -31,9 +31,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @AuthJWT.load_config
 def get_config():
     return ServiceSettings()
+
 
 @app.get('/account/auth', tags=['Account'], response_model=AccountGet)
 async def auth(user: AccountToken = Depends(uauth.is_auth)):
@@ -44,7 +46,7 @@ async def auth(user: AccountToken = Depends(uauth.is_auth)):
 @app.get('/account/status', tags=['Account'], response_model=AccountGet)
 async def status(request: Request):
 
-    user, code, token = await uauth.is_auth_query(request)
+    user, code, _ = await uauth.is_auth_query(request)
 
     if code != 200:
         ugens.generate_401()
@@ -67,7 +69,7 @@ async def settings_get(request: Request):
 @app.post('/account/settings', tags=['Account'], response_model=SettingsGet)
 async def settings_change(request: Request, data: SettingsUpdate):
 
-    user, code, token = await uauth.is_auth_query(request)
+    user, code, _ = await uauth.is_auth_query(request)
 
     if code != 200:
         ugens.generate_401()
@@ -145,10 +147,9 @@ async def token(user: AccountToken, Authorize: AuthJWT = Depends()):
     if not uauth.verify_password(user.password, password_hash):
         ugens.generate_token_400()
 
-
     tokens = TokenModel(
-        access_token = Authorize.create_access_token(subject=account.email),
-        refresh_token = Authorize.create_refresh_token(subject=account.email)
+        access_token=Authorize.create_access_token(subject=account.email),
+        refresh_token=Authorize.create_refresh_token(subject=account.email)
     )
 
     return tokens

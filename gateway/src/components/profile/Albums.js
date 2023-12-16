@@ -25,11 +25,14 @@ const Albums = () => {
     }
 
     return (
+        <>
+        <div className='leader__title'>Альбомы</div>
         <div className="albums">
             {likes.albumsWithData.map((value) => {
                 return <Album data={value.album} />
             })}
-    </div>
+        </div>
+        </>
     )
 }
 

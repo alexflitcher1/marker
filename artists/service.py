@@ -1,18 +1,11 @@
-from fastapi import FastAPI
-from fastapi import Request, Body
-from fastapi import Response
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
-import httpx
-from httpx import AsyncClient
-import json
+from models import ArtistGet, LikeGet, LikeArtist
+from db_manager import DBManagerArtist, DBManagerLikes
 
-from models import *
-from db_manager import *
-from config import *
 import utils.auth as uauth
 import utils.exception_generators as ugens
-from utils.auth import client
 
 
 artists_manager = DBManagerArtist()
@@ -33,20 +26,21 @@ app.add_middleware(
 
 @app.get('/artists/likes', tags=['Artists'])
 async def artist_likes(request: Request):
+    """ Return user artists likes """
 
-    user, code, token = await uauth.is_auth_query(request)
-    
+    user, code, _ = await uauth.is_auth_query(request)
+
     if code != 200:
         ugens.generate_401()
-    
+
     likes_q = likes_manager.fetch_likes(user['id'])
     likes = []
 
     for like in likes_q:
         artist = artists_manager.fetch_id(like.artistid)
         if not artist:
-            continue 
-            
+            continue
+
         artist = ArtistGet(**artist.serialize)
         likes.append(
             LikeGet(
@@ -57,13 +51,14 @@ async def artist_likes(request: Request):
         )
 
     return likes
-    
+
 
 @app.post('/artists/likes', tags=['Artists'])
 async def like_artist(request: Request, data: LikeArtist):
+    """ Make like for artist with data.id, if it exists delete like """
 
-    user, code, token = await uauth.is_auth_query(request)
-    
+    user, code, _ = await uauth.is_auth_query(request)
+
     if code != 200:
         ugens.generate_401()
 
@@ -83,8 +78,10 @@ async def like_artist(request: Request, data: LikeArtist):
 
 @app.get('/artists/likes-ids')
 async def likes_ids(request: Request):
-    user, code, token = await uauth.is_auth_query(request)
-    
+    """ Return user's artist likes, but only ids """
+
+    user, code, _ = await uauth.is_auth_query(request)
+
     if code != 200:
         ugens.generate_401()
 
@@ -100,8 +97,19 @@ async def likes_ids(request: Request):
 
     return ids
 
+
+@app.get('/artists/search/{start}/{stop}', tags=['Artists'])
+async def search_albums(start: int, stop: int, query: str):
+    """ Search artists by search query """
+
+    artists_q = artists_manager.search(query, start, stop)
+    artists = [ArtistGet(**artist.serialize) for artist in artists_q]
+    return artists
+
+
 @app.get('/artists/{id}', tags=['Artists'], response_model=ArtistGet)
 async def artist_by_id(id: int):
+    """ Return artist data from id """
 
     artist = artists_manager.fetch_id(id)
 

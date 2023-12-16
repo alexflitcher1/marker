@@ -18,6 +18,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.get('/img/{file}')
 async def img(file: str):
     if os.path.isfile(f'./static/img/{file}'):

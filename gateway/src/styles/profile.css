@@ -19,24 +19,9 @@
 }
 
 .artist__likes {
-    padding: 10px;
     display: flex;
     flex-wrap: wrap;
 }
-
-.artist__likes div {
-    margin: 10px;
-}
-
-.artist__likes > div:hover {
-    border: 1px solid #A600FF;
-    width: 30%;
-}
-
-.artist__likes img {
-    border-radius: 20px;
-    width: 50%;
-} 
 
 #mask {
     position: relative;

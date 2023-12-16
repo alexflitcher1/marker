@@ -9,7 +9,7 @@ class DBManagerArtist:
     def __init__(self):
         SessionLocal = sessionmaker(autoflush=False, bind=engine)
         self.db = SessionLocal()
-    
+
     def create(self, name: str, description: str,
                avatar: str, background: str):
 
@@ -19,7 +19,7 @@ class DBManagerArtist:
             avatar=avatar,
             background=background
         )
-        
+
         try:
             self.db.add(artist)
             self.db.commit()
@@ -36,6 +36,13 @@ class DBManagerArtist:
         return self.db.query(Artist) \
             .filter(Artist.name == name)
 
+    def search(self, query: str, start: int, stop: int):
+        return self.db.query(Artist) \
+            .filter(Artist.name.like("%{}%".format(query))) \
+            .offset(start) \
+            .limit(stop) \
+            .all()
+
 
 class DBManagerLikes:
 
@@ -48,7 +55,7 @@ class DBManagerLikes:
             uid=uid,
             artistid=artist_id,
         )
-        
+
         try:
             self.db.add(like)
             self.db.commit()

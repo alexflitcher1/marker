@@ -24,6 +24,9 @@ export const $albumsHost = axios.create({
     baseURL: process.env.REACT_APP_ALBUMS_API_HOST
 })
 
+export const $searchHost = axios.create({
+    baseURL: process.env.REACT_APP_SEARCH_API_HOST
+})
 
 const authInterceptorRefresh = config => {
     config.headers.Authorization = `Bearer ${localStorage.getItem('refresh_token')}`

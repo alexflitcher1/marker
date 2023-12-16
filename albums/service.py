@@ -1,18 +1,11 @@
-from fastapi import FastAPI
-from fastapi import Request, Body
-from fastapi import Response
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
-import httpx
-from httpx import AsyncClient
-import json
+from models import AlbumGet, LikeGet, LikeAlbum
+from db_manager import DBManagerAlbum, DBManagerLikes
 
-from models import *
-from db_manager import *
-from config import *
 import utils.auth as uauth
 import utils.exception_generators as ugens
-from utils.auth import client
 
 
 album_manager = DBManagerAlbum()
@@ -33,9 +26,9 @@ app.add_middleware(
 
 @app.get('/albums/likes', tags=['Albums'])
 async def album_likes(request: Request):
-    
-    user, code, token = await uauth.is_auth_query(request)
+    """ Return user album likes """
 
+    user, code, _ = await uauth.is_auth_query(request)
     if code != 200:
         ugens.generate_401()
 
@@ -46,33 +39,25 @@ async def album_likes(request: Request):
         album_r = album_manager.fetch_id(like.albumid)
         if not album_r:
             continue
-        
-        album = AlbumGet(**album_r.serialize)
 
-        likes.append(
-            LikeGet(
-                id=like.id,
-                uid=like.uid,
-                album=album
-            )
-        )
+        album = AlbumGet(**album_r.serialize)
+        likes.append(LikeGet(id=like.id, uid=like.uid, album=album))
 
     return likes
 
 
 @app.post('/albums/likes', tags=['Albums'])
 async def like_album(request: Request, data: LikeAlbum):
+    """ Make like for album with data.id, if it exists delete like """
 
-    user, code, token = await uauth.is_auth_query(request)
-
+    user, code, _ = await uauth.is_auth_query(request)
     if code != 200:
         ugens.generate_401()
 
     album = album_manager.fetch_id(data.album_id)
-
     if not album:
         ugens.generate_album_404()
-    
+
     if not likes_manager.fetch_like(uid=user['id'], album_id=data.album_id):
         query = likes_manager.create(uid=user['id'], album_id=data.album_id)
         return {'result': query}
@@ -84,8 +69,9 @@ async def like_album(request: Request, data: LikeAlbum):
 
 @app.get('/albums/likes-ids')
 async def likes_ids(request: Request):
-    user, code, token = await uauth.is_auth_query(request)
-    
+    """ Return user's album likes, but only ids """
+
+    user, code, _ = await uauth.is_auth_query(request)
     if code != 200:
         ugens.generate_401()
 
@@ -102,11 +88,20 @@ async def likes_ids(request: Request):
     return ids
 
 
+@app.get('/albums/search/{start}/{stop}', tags=['Albums'])
+async def search_albums(start: int, stop: int, query: str):
+    """ Search albums by search query """
+
+    albums_q = album_manager.search(query, start, stop)
+    albums = [AlbumGet(**album.serialize) for album in albums_q]
+    return albums
+
+
 @app.get('/albums/{id}', tags=['Albums'], response_model=AlbumGet)
 async def album_by_id(id: int):
-        
-    album = album_manager.fetch_id(id)
+    """ Return album data without tracks """
 
+    album = album_manager.fetch_id(id)
     if not album:
         ugens.generate_album_404()
 
@@ -115,13 +110,12 @@ async def album_by_id(id: int):
 
 @app.get('/albums/artist/{id}', tags=['Albums'])
 async def album_tracks(id: int):
+    """ Return all artist albums without tracks """
 
     albums_q = album_manager.fetch_artist_id(id)
     albums = []
-    
+
     for album in albums_q:
-        albums.append(
-            AlbumGet(**album.serialize)
-        )
+        albums.append(AlbumGet(**album.serialize))
 
     return albums

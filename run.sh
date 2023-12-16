@@ -23,6 +23,14 @@ cd cdn
 python -m uvicorn service:app --port 8004 --reload > cdn.log.txt &
 
 cd ..
+cd search
+python -m uvicorn service:app --port 8005 --reload > search.log.txt &
+
+cd ..
+cd playlists
+python -m uvicorn service:app --port 8006 --reload > playlists.log.txt &
+
+cd ..
 python rabbitmq.py > rabbitmq.log.txt &
 
 

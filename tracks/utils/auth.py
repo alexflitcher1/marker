@@ -1,19 +1,17 @@
 import json
-import httpx
 from httpx import AsyncClient
 
-from config import *
-
+from config import AUTH_URL
 
 client = AsyncClient()
 
-
 async def is_auth_query(request):
-    auth = request.headers.get('Authorization')
+    """ Check auth user """
 
+    auth = request.headers.get('Authorization')
     if not auth:
         return (False, False, False)
-    
+
     result = await client.get(AUTH_URL, headers={'Authorization': auth})
     r = json.loads(result.content)
 

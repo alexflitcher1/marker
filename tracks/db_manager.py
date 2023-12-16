@@ -66,6 +66,12 @@ class DBManagerTracks:
             .limit(stop) \
             .all()
 
+    def search(self, query: str, start: int, stop: int):
+        return self.db.query(Tracks) \
+            .filter(Tracks.title.like("%{}%".format(query))) \
+            .offset(start) \
+            .limit(stop) \
+            .all()
 
 
 class DBManagerLikes:

@@ -1,19 +1,17 @@
-from fastapi import FastAPI
-from fastapi import Request, Body
-from fastapi import Response
-from fastapi.middleware.cors import CORSMiddleware
-
-import httpx
-from httpx import AsyncClient
 import json
 
-from models import *
-from db_manager import *
-from config import *
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+
+from models import ArtistGet, TrackGet, LikeTrack
+from db_manager import DBManagerTracks, DBManagerLikes
+from config import ARTIST_URL, ALBUM_URL, TRACK_URL
+
 import utils.auth as uauth
 import utils.exception_generators as ugens
 from utils.auth import client
 
+import utils.queries as uque
 
 tracks_manager = DBManagerTracks()
 likes_manager = DBManagerLikes()
@@ -33,32 +31,25 @@ app.add_middleware(
 
 @app.get('/tracks/likes', tags=['Tracks'])
 async def likes_user(request: Request):
-    
-    user, code, token = await uauth.is_auth_query(request)
-    
+    """ Return user's likes """
+
+    user, code, _ = await uauth.is_auth_query(request)
+
     if code != 200:
         ugens.generate_401()
 
     likes_q = likes_manager.fetch_likes(user['id'])
-    likes = []
+    likes = await uque.unique_tracks(likes_q)
 
-    for like in likes_q:
-        track = await client.get(TRACK_URL + str(like.trackid))
-        if track.status_code != 200:
-            continue
-
-        track = json.loads(track.content)
-            
-        track = TrackGet(**track)
-
-        likes.append(track)
-        
     return likes
+
 
 @app.get('/tracks/likes-ids')
 async def likes_ids(request: Request):
-    user, code, token = await uauth.is_auth_query(request)
-    
+    """ Return user's likes, but only ids """
+
+    user, code, _ = await uauth.is_auth_query(request)
+
     if code != 200:
         ugens.generate_401()
 
@@ -77,9 +68,10 @@ async def likes_ids(request: Request):
 
 @app.post('/tracks/likes', tags=['Tracks'])
 async def like_track(request: Request, data: LikeTrack):
-    
-    user, code, token = await uauth.is_auth_query(request)
-    
+    """ Make like for track with data.id, if it exists delete like """
+
+    user, code, _ = await uauth.is_auth_query(request)
+
     if code != 200:
         ugens.generate_401()
 
@@ -88,47 +80,38 @@ async def like_track(request: Request, data: LikeTrack):
 
     if not track:
         ugens.generate_track_404()
-    
+
     if not likes_manager.fetch_like(uid=user['id'], track_id=data.track_id):
         query = likes_manager.create(uid=user['id'], track_id=data.track_id)
         return {'result': query}
-    
+
     query = likes_manager.delete(uid=user['id'], track_id=data.track_id)
     return  {'result': query}
 
 
 @app.get('/tracks/pagination/{start}/{stop}', tags=['Tracks'])
 async def pagination(start: int, stop: int):
+    """ Return tracks from [start] to [stop] """
 
     tracks_q = tracks_manager.fetch_pagination(start, stop)
-
-    tracks = []
-
-    used = set([])
-
-    for track in tracks_q:
-        track = await client.get(TRACK_URL + str(track.id))
-        if track.status_code != 200:
-            continue
-
-        track = json.loads(track.content)
-        
-        if track['title'] in used:
-            continue
-
-        used.add(track['title'])
-
-        track = TrackGet(**track)
-
-        tracks.append(track)
-
+    tracks = await uque.unique_tracks(tracks_q)
     return tracks
 
 
-@app.get('/tracks/{id}', tags=['Tracks'], response_model=TrackGet)
-async def track_by_id(id: int):
-    
-    track = tracks_manager.fetch_id(id)
+@app.get('/tracks/search/{start}/{stop}', tags=['Tracks'])
+async def search_tracks(start: int, stop: int, query: str):
+    """ Search tracks by search query """
+
+    tracks_q = tracks_manager.search(query, start, stop)
+    tracks = await uque.unique_tracks(tracks_q)
+    return tracks
+
+
+@app.get('/tracks/{track_id}', tags=['Tracks'], response_model=TrackGet)
+async def track_by_id(track_id: int):
+    """ Return track by id """
+
+    track = tracks_manager.fetch_id(track_id)
 
     if not track:
         ugens.generate_track_404()
@@ -143,7 +126,7 @@ async def track_by_id(id: int):
         artist = await client.get(ARTIST_URL + str(artist.artistid))
         if artist.status_code != 200:
             continue
-        
+
         artist = json.loads(artist.content)
         artists.append(ArtistGet(**artist))
 
@@ -152,13 +135,13 @@ async def track_by_id(id: int):
     del track_serialize['artistid']
 
     return TrackGet(**track_serialize)
-    
 
-@app.get('/tracks/album/{id}', tags=['Tracks'])
-async def track_by_id(id: int):
 
-    album = await client.get(ALBUM_URL + str(id))
+@app.get('/tracks/album/{album_id}', tags=['Tracks'])
+async def album_tracks_by_id(album_id: int):
+    """ Return all tracks from album with this id """
 
+    album = await client.get(ALBUM_URL + str(album_id))
     if album.status_code == 404:
         return json.loads(album.content)
 
@@ -166,20 +149,7 @@ async def track_by_id(id: int):
     album_id = album['id']
 
     tracks_q = tracks_manager.fetch_tracks(album_id)
-    tracks = []
-
-    titles = set([])
-    
-    for track in tracks_q:
-        track = await client.get(TRACK_URL + str(track.id))
-        track = json.loads(track.content)
-
-        if track['title'] in titles:
-            continue
-
-        titles.add(track['title'])
-
-        tracks.append(track)
+    tracks = await uque.unique_tracks(tracks_q)
 
     del album['artistid']
     album['tracks'] = tracks
@@ -187,27 +157,11 @@ async def track_by_id(id: int):
     return album
 
 
-@app.get('/tracks/artist/{id}/{start}/{stop}', tags=['Tracks'])
-async def track_by_id(id: int, start: int, stop: int):
+@app.get('/tracks/artist/{artist_id}/{start}/{stop}', tags=['Tracks'])
+async def artist_tracks_by_id(artist_id: int, start: int, stop: int):
+    """ Return all artist's tracks with pagination from [start] to [stop] """
 
-    tracks_q = tracks_manager.fetch_artist_tracks(id, start, stop)
-
-    tracks = []
-
-    used = set([])
-
-    for track in tracks_q:
-        track = await client.get(TRACK_URL + str(track.id))
-        if track.status_code != 200:
-            continue
-
-        track = json.loads(track.content)
-        if track['title'] in used:
-            continue
-
-        used.add(track['title'])
-        
-        track = TrackGet(**track)
-        tracks.append(track)
+    tracks_q = tracks_manager.fetch_artist_tracks(artist_id, start, stop)
+    tracks = await uque.unique_tracks(tracks_q)
 
     return tracks

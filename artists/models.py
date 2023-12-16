@@ -8,7 +8,7 @@ class SerializedModel(BaseModel, ModelSerializer):
 
 
 class ArtistGet(SerializedModel):
-    
+
     id: int
     name: str
     description: str
@@ -29,6 +29,6 @@ class LikeArtist(SerializedModel):
 
 
 class Error(SerializedModel):
-    
+
     code: int
     message: str

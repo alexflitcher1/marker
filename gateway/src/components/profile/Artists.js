@@ -3,6 +3,7 @@ import { Context } from "../..";
 import { artistLikes } from "../../http/artists";
 import { Link } from "react-router-dom";
 import { ARTIST_ROUTE } from "../../utils/consts";
+import Artist from "../artists/Artist";
 
 
 const Artists = () => {
@@ -23,17 +24,11 @@ const Artists = () => {
 
     return (
         <>
+        <div className='leader__title'>Артисты</div>
         <div className="artist__likes">
-        {likes.artistsWithData.map(value => {
-            return (
-                <Link to={ARTIST_ROUTE + '/' + value.artist.id}>
-                <div>
-                    <div><img src={avatarUrl + value.artist.avatar} /></div>
-                    <div>{value.artist.name}</div>
-                </div>
-                </Link>
-            )
-        })}
+            {likes.artistsWithData.map(value => {
+                return <Artist data={value.artist} />
+            })}
         </div>
         </>
     )

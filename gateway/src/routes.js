@@ -1,10 +1,11 @@
 import Signup from './pages/Signup';
 import MainPage from './pages/MainPage';
 import { RouteObject } from "react-router-dom";
-import { MAIN_PAGE_ROUTE, SIGNUP_ROUTE, LOGIN_ROUTE, PROFILE_ROUTE, ARTIST_ROUTE } from './utils/consts';
+import { MAIN_PAGE_ROUTE, SIGNUP_ROUTE, LOGIN_ROUTE, PROFILE_ROUTE, ARTIST_ROUTE, SEARCH_ROUTE } from './utils/consts';
 import Login from './pages/Login';
 import Profile from './pages/Profile';
 import Artist from './pages/Artist';
+import Search from './pages/Search';
 
 
 export const authRoutes: RouteObject[] = [
@@ -30,5 +31,9 @@ export const publicRoutes = [
     {
         path: ARTIST_ROUTE + '/:id',
         Element: <Artist />
+    },
+    {
+        path: SEARCH_ROUTE + '/:query',
+        Element: <Search />
     }
 ]

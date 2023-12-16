@@ -9,7 +9,7 @@ class DBManagerAlbum:
     def __init__(self):
         SessionLocal = sessionmaker(autoflush=False, bind=engine)
         self.db = SessionLocal()
-    
+
     def create(self, artist_id: int, title: str,
     description: str, avatar: str, genre: str):
         album = Album(
@@ -19,7 +19,7 @@ class DBManagerAlbum:
             avatar=avatar,
             genre=genre
         )
-        
+
         try:
             self.db.add(album)
             self.db.commit()
@@ -39,6 +39,13 @@ class DBManagerAlbum:
     def fetch_title(self, title: str):
         return self.db.query(Album) \
         .filter(Album.title == title)
+
+    def search(self, query: str, start: int, stop: int):
+        return self.db.query(Album) \
+            .filter(Album.title.like("%{}%".format(query))) \
+            .offset(start) \
+            .limit(stop) \
+            .all()
 
 
 class DBManagerLikes:
