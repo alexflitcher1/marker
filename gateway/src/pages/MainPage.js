@@ -6,8 +6,6 @@ import Track from '../components/tracks/Track';
 import { useContext, useEffect, useState } from 'react';
 import { likesIdsGet, pagination } from '../http/tracks';
 
-
-
 const MainPage = () => {
     const {likes} = useContext(Context)
     const {tracks} = useContext(Context)

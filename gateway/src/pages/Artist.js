@@ -25,6 +25,7 @@ const Artist = () => {
     const [isLike, setLike] = useState(false);
 
     useEffect(() => {
+        setLoading(true)
         artistLikeIds().then(data => {
             likes.artistLikes = JSON.parse(data.request.response);
             setLike(likes.artistLikes.indexOf(params.id*1) !== -1);
@@ -32,7 +33,7 @@ const Artist = () => {
         artistData(params.id).then(data => {
             artist.artist = JSON.parse(data.request.response);
         }).finally(() => setLoading(false));
-    }, []);
+    }, [params.id]);
 
     if (loading) {
         return 'waiting..';

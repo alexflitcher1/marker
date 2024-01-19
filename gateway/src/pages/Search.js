@@ -13,7 +13,7 @@ import { likesIdsGet } from "../http/tracks"
 
 const Search = () => {
     const params = useParams()
-    const [searchResults, setResults] = useState()
+    const [searchResults, setResults] = useState({tracks: [], albums: [], artists: []})
     const {likes} = useContext(Context)
     const {tracks} = useContext(Context)
     const [loading, setLoading] = useState(true)

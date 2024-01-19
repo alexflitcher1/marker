@@ -7,6 +7,7 @@ import TracksStore from './store/TracksStore';
 import PlayStore from './store/PlayStore';
 import LikesStore from './store/LikesStore';
 import ArtistStore from './store/ArtistStore';
+import PlaylistStore from './store/PlaylistStore';
 
 export const Context = createContext(null)
 
@@ -17,7 +18,8 @@ const stores = {
   tracks: new TracksStore(),
   play: new PlayStore(),
   likes: new LikesStore(),
-  artist: new ArtistStore()
+  artist: new ArtistStore(),
+  playlists: new PlaylistStore()
 }
 
 

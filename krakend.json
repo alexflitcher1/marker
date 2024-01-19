@@ -1,0 +1,54 @@
+{
+  "$schema": "https://www.krakend.io/schema/krakend.json",
+  "version": 3,
+  "name": "KrakenD - API Gateway",
+  "timeout": "3000ms",
+  "cache_ttl": "300s",
+  "output_encoding": "json",
+  "port": 80,
+  "debug_endpoint": false,
+  "echo_endpoint": false,
+  "disable_rest": true,
+  "endpoints": [
+    {
+      "endpoint": "/account/auth",
+      "method": "GET",
+      "output_encoding": "no-op",
+      "backend": [
+        {
+          "url_pattern": "/account/auth",
+          "encoding": "no-op",
+          "sd": "static",
+          "method": "GET",
+          "host": [
+            "http://localhost:8081"
+          ],
+          "disable_host_sanitize": false
+        }
+      ],
+      "input_headers": [
+        "Authorization"
+      ]
+    },
+    {
+      "endpoint": "/account/status",
+      "method": "GET",
+      "output_encoding": "no-op",
+      "backend": [
+        {
+          "url_pattern": "/account/status",
+          "encoding": "no-op",
+          "sd": "static",
+          "method": "GET",
+          "host": [
+            "http://localhost:8081"
+          ],
+          "disable_host_sanitize": false
+        }
+      ],
+      "input_headers": [
+        "Authorization"
+      ]
+    }
+  ]
+}

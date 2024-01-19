@@ -16,6 +16,7 @@ import utils.queries as uque
 tracks_manager = DBManagerTracks()
 likes_manager = DBManagerLikes()
 
+
 app = FastAPI(title='Marker Tracks APIs')
 
 origins = ["*"]

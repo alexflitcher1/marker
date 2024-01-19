@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException, status, UploadFile
 
 from fastapi import Request, Body
 from fastapi import Response
@@ -78,6 +78,35 @@ async def artist_avatar(file: str):
 async def artist_background(file: str):
     if os.path.isfile(f'./static/artists/background/{file}'):
         return FileResponse(f'./static/artists/background/{file}')
+
+    raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail={"msg": "Avater file doens't exist", "code": 13}
+    )
+
+@app.post('/playlist/avatar-upload')
+async def playlist_avatar_upload(file: UploadFile):
+    filename = file.filename
+    save_path = 'static/playlists/'
+    try:
+        contents = file.file.read()
+        with open(os.path.join(save_path, filename), 'wb') as f:
+            f.write(contents)
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"msg": "Server error. Try again later", "code": 14}
+        )
+    finally:
+        file.file.close()
+
+    return filename
+
+
+@app.get('/playlist/{file}')
+async def playlist_avatar(file: str):
+    if os.path.isfile(f'./static/playlists/{file}'):
+        return FileResponse(f'./static/playlists/{file}')
 
     raise HTTPException(
         status_code=status.HTTP_404_NOT_FOUND,

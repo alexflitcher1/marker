@@ -11,6 +11,7 @@ import utils.exception_generators as ugens
 album_manager = DBManagerAlbum()
 likes_manager = DBManagerLikes()
 
+
 app = FastAPI(title='Marker Albums APIs',)
 
 origins = ["*"]

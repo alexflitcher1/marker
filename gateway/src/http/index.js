@@ -28,6 +28,14 @@ export const $searchHost = axios.create({
     baseURL: process.env.REACT_APP_SEARCH_API_HOST
 })
 
+export const $playlistsHost = axios.create({
+    baseURL: process.env.REACT_APP_PLAYLISTS_API_HOST
+})
+
+export const $cdnHost = axios.create({
+    baseURL: process.env.REACT_APP_CND_API_HOST
+})
+
 const authInterceptorRefresh = config => {
     config.headers.Authorization = `Bearer ${localStorage.getItem('refresh_token')}`
     return config
@@ -46,4 +54,6 @@ $artistsHost.interceptors.request.use(authInterceptor)
 
 $tracksHost.interceptors.request.use(authInterceptor)
     
+$playlistsHost.interceptors.request.use(authInterceptor)
+
 $refreshHost.interceptors.request.use(authInterceptorRefresh)
